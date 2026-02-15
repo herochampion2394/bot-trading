@@ -24,6 +24,13 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
       
+      - name: Create Artifact Registry repository if not exists
+        run: |
+          gcloud artifacts repositories create bot-trading \
+            --repository-format=docker \
+            --location=${{ secrets.GCP_REGION }} \
+            --description="Docker images for bot-trading" || true
+      
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev
       
