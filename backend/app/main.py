@@ -4,14 +4,21 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from contextlib import asynccontextmanager
 import logging
-
-from app.database import engine, Base
-from app.api import routes_auth, routes_binance, routes_bots, routes_trades
-from app.services.trading_engine import TradingEngine
-from app.database import SessionLocal
+import sys
+import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+try:
+    from app.database import engine, Base, SessionLocal
+    from app.api import routes_auth, routes_binance, routes_bots, routes_trades
+    from app.services.trading_engine import TradingEngine
+    logger.info("All imports successful")
+except Exception as e:
+    logger.error(f"Import error: {e}")
+    logger.error(traceback.format_exc())
+    sys.exit(1)
 
 scheduler = AsyncIOScheduler()
 
