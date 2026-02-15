@@ -1,3 +1,116 @@
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import api from '../services/api'
+
 export default function Register() {
-  return <div className="min-h-screen flex items-center justify-center"><h1>Register Page - TODO</h1></div>
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
+    try {
+      await api.post('/auth/register', {
+        username,
+        email,
+        password,
+      })
+      setSuccess(true)
+      setTimeout(() => navigate('/login'), 2000)
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Registration failed')
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow">
+        <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
+        
+        {error && <div className="bg-red-50 text-red-600 p-3 rounded mb-4">{error}</div>}
+        {success && (
+          <div className="bg-green-50 text-green-600 p-3 rounded mb-4">
+            Registration successful! Redirecting to login...
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Username</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              minLength={3}
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+              minLength={6}
+            />
+            <small className="text-gray-500">At least 6 characters</small>
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2">Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            disabled={success}
+          >
+            {success ? 'Redirecting...' : 'Register'}
+          </button>
+        </form>
+        
+        <p className="mt-4 text-center text-gray-600">
+          Already have an account? <Link to="/login" className="text-blue-600 hover:underline">Login</Link>
+        </p>
+      </div>
+    </div>
+  )
 }
