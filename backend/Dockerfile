@@ -17,3 +17,5 @@ ENV PYTHONUNBUFFERED=1
 
 # Run the application
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--log-level", "info"]
+
+# Build version: 1.0.1
