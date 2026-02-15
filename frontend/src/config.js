@@ -1,1 +1,2 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+// Try to get backend URL from window (injected at runtime) or build-time env var
+export const API_URL = window.ENV?.BACKEND_URL || import.meta.env.VITE_API_URL || 'https://bot-trading-backend-155580679014.asia-east1.run.app'
