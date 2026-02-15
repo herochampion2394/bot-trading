@@ -1,12 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
-
-const api = axios.create({
-  baseURL: '/api',
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-})
+import api from '../services/api'
 
 export default function Dashboard() {
   const { data: bots } = useQuery({

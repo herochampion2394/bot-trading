@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import axios from 'axios'
+import api from '../services/api'
 
 export default function Login({ setToken }) {
   const [username, setUsername] = useState('')
@@ -15,7 +15,7 @@ export default function Login({ setToken }) {
       formData.append('username', username)
       formData.append('password', password)
       
-      const response = await axios.post('/api/auth/login', formData)
+      const response = await api.post('/auth/login', formData)
       localStorage.setItem('token', response.data.access_token)
       setToken(response.data.access_token)
       navigate('/')
