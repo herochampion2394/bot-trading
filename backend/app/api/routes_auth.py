@@ -17,13 +17,13 @@ class UserRegister(BaseModel):
     email: EmailStr
     username: str
     password: str
-    full_name: str = None
+    full_name: str | None = None
 
 class UserResponse(BaseModel):
     id: int
     email: str
     username: str
-    full_name: str = None
+    full_name: str | None = None
     is_active: bool
     
     class Config:
