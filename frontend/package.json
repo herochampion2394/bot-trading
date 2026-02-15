@@ -20,11 +20,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.2.0",
-    "@radix-ui/react-slot": "^1.0.2",
-    "@radix-ui/react-sidebar": "^1.0.0",
-    "@radix-ui/react-tooltip": "^1.0.7",
-    "@radix-ui/react-toast": "^1.1.5",
-    "sonner": "^1.3.1"
+    "@radix-ui/react-slot": "^1.0.2"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
