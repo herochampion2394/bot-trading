@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import Button from '../components/ui/Button'
+import { Button } from '../components/ui/Button'
 
 export default function Accounts() {
   const [showModal, setShowModal] = useState(false)
