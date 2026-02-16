@@ -88,8 +88,9 @@ async def list_binance_accounts(
         BinanceAccount.user_id == current_user.id
     ).all()
     
-    return [{"id": acc.id, "name": acc.name, "testnet": acc.testnet, 
-             "is_active": acc.is_active, "balance_usdt": acc.balance_usdt} 
+   return [{"id": acc.id, "name": acc.name, "testnet": acc.testnet, 
+             "is_active": acc.is_active, "balance_usdt": acc.balance_usdt,
+             "api_key": acc.api_key, "balance": str(acc.balance_usdt)} 
             for acc in accounts]
 
 @router.get("/accounts/{account_id}", response_model=BinanceAccountResponse)

@@ -167,13 +167,13 @@ export default function Accounts() {
                     )}
                   </h3>
                   <p className="text-xs text-muted-foreground font-mono mt-1">
-                    {account.api_key.substring(0, 8)}...{account.api_key.substring(account.api_key.length - 4)}
+                    {account.api_key ? `${account.api_key.substring(0, 8)}...${account.api_key.substring(account.api_key.length - 4)}` : 'Hidden'}
                   </p>
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-muted-foreground">Balance</div>
                   <div className="text-xl font-bold font-mono text-profit">
-                    ${parseFloat(account.balance || 0).toFixed(2)}
+                    ${parseFloat(account.balance_usdt || account.balance || 0).toFixed(2)}
                   </div>
                   <div className="text-xs text-muted-foreground">USDT</div>
                 </div>
