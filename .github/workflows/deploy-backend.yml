@@ -51,4 +51,5 @@ jobs:
             --memory 512Mi \
             --timeout 300 \
             --min-instances 1 \
+            --vpc-egress=private-ranges-only \
             --clear-vpc-connector
