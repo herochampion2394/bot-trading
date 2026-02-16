@@ -195,8 +195,8 @@ export default function Accounts() {
       )}
       
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="stat-card p-6 w-full max-w-md space-y-4">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={handleCloseModal}>
+          <div className="stat-card p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold">
                 {editingAccount ? 'Edit Account' : 'Add Binance Account'}
