@@ -50,4 +50,6 @@ jobs:
             --set-env-vars DATABASE_URL=${{ secrets.DATABASE_URL }},SECRET_KEY=${{ secrets.SECRET_KEY }} \
             --memory 512Mi \
             --timeout 300 \
-            --min-instances 1
+            --min-instances 1 \
+            --vpc-egress=all-traffic \
+            --vpc-connector=bot-trading-connector

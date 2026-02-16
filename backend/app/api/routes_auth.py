@@ -10,6 +10,7 @@ from app.services.auth import (
     get_password_hash, verify_password, create_access_token, 
     get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 )
+import httpx
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -100,3 +101,20 @@ async def get_me(current_user: User = Depends(get_current_user)):
     Get current user info.
     """
     return current_user
+
+@router.get("/ip")
+async def get_current_ip():
+    """
+    Returns the current outbound IP address of the backend.
+    Useful for configuring Binance IP restrictions.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://api.ipify.org?format=json", timeout=5.0)
+            ip_data = response.json()
+            return {
+                "ip": ip_data.get("ip"),
+                "message": "Add this IP to Binance API key whitelist"
+            }
+    except Exception as e:
+        return {"error": str(e), "message": "Could not retrieve IP"}
