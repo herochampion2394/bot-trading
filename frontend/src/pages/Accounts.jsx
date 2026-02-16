@@ -290,9 +290,25 @@ export default function Accounts() {
               </div>
               
               <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
-                <p className="text-xs text-blue-400">
-                  ℹ️ Your API key needs <strong>Spot & Margin Trading</strong> permissions. Never share your API secret!
-                </p>
+                <div className="space-y-2">
+                  <p className="text-xs text-blue-400 font-semibold">
+                    ℹ️ Required API Key Permissions:
+                  </p>
+                  <ul className="text-xs text-blue-400 list-disc list-inside space-y-1">
+                    <li><strong>Enable Spot & Margin Trading</strong> ✓</li>
+                    <li><strong>Enable Reading</strong> ✓</li>
+                    <li>Restrict access to trusted IPs (optional but recommended)</li>
+                  <li>Never share your API secret with anyone!</li>
+                 </ul>
+                  <a 
+                    href="https://www.binance.com/en/my/settings/api-management" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block mt-2 text-xs text-cyan-400 hover:text-cyan-300 underline"
+                  >
+                    → Manage API Keys on Binance
+                  </a>
+                </div>
               </div>
               
               {createMutation.error && (
