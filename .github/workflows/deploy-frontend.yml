@@ -31,7 +31,7 @@ jobs:
         run: |
           cd frontend
           docker build \
-            --build-arg VITE_API_URL=${{ secrets.BACKEND_URL }} \
+            --build-arg VITE_API_URL=https://bot-trading-backend-155580679014.asia-east1.run.app \
             -t ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/bot-trading/frontend:latest .
           docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/bot-trading/frontend:latest
       
