@@ -1,5 +1,4 @@
-export default function Accounts() {
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Button from '../components/ui/Button'
 
@@ -138,7 +137,7 @@ export default function Accounts() {
       ) : accounts.length === 0 ? (
         <div className="stat-card p-8 text-center">
           <p className="text-muted-foreground">No accounts connected yet</p>
-          <p className="text-sm text-muted-foreground mt-2">Click "Add Account" to connect your Binance API</p>
+          <p className="text-sm text-muted-foreground mt-2">Click \"Add Account\" to connect your Binance API</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -251,7 +250,7 @@ export default function Accounts() {
                     onClick={() => setShowSecret(!showSecret)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showSecret ? '👁️' : '👁️‍🗨️'}
+                    {showSecret ? '👁️' : '🔒'}
                   </button>
                 </div>
               </div>
@@ -271,7 +270,7 @@ export default function Accounts() {
               
               <div className="bg-blue-500/10 border border-blue-500/20 rounded p-3">
                 <p className="text-xs text-blue-400">
-                  ⓘ Your API key needs <strong>Spot & Margin Trading</strong> permissions. Never share your API secret!
+                  ℹ️ Your API key needs <strong>Spot & Margin Trading</strong> permissions. Never share your API secret!
                 </p>
               </div>
               
