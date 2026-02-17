@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '../components/ui/Button'
 
+import { API_URL } from '../config'
 export default function Accounts() {
   const [showModal, setShowModal] = useState(false)
   const [editingAccount, setEditingAccount] = useState(null)
@@ -20,7 +21,7 @@ export default function Accounts() {
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['binance-accounts'],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts`, {
+      const res = await fetch(`${API_URL}/api/binance/accounts`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch accounts')
@@ -30,7 +31,7 @@ export default function Accounts() {
   
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts`, {
+      const res = await fetch(`${API_URL}/api/binance/accounts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +53,7 @@ export default function Accounts() {
   
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts/${id}`, {
+      const res = await fetch(`${API_URL}/api/binance/accounts/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -66,7 +67,7 @@ export default function Accounts() {
   
   const syncMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts/${id}/sync`, {
+      const res = await fetch(`${API_URL}/api/binance/accounts/${id}/sync`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       })

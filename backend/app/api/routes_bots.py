@@ -44,7 +44,7 @@ class BotConfigResponse(BaseModel):
     class Config:
         from_attributes = True
 
-@router.post("/", response_model=BotConfigResponse)
+@router.post("", response_model=BotConfigResponse)
 async def create_bot(
     bot_data: BotConfigCreate,
     current_user: User = Depends(get_current_user),
@@ -85,7 +85,7 @@ async def create_bot(
     
     return bot
 
-@router.get("/")
+@router.get("")
 async def list_bots(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '../components/ui/Button'
 import { Bot, Play, Pause, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
+import { API_URL } from '../config'
 
 export default function Bots() {
   const [showModal, setShowModal] = useState(false)
@@ -25,7 +26,7 @@ export default function Bots() {
   const { data: bots = [], isLoading: botsLoading } = useQuery({
     queryKey: ['bots'],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots`, {
+      const res = await fetch(`${API_URL}/api/bots`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch bots')
@@ -37,7 +38,7 @@ export default function Bots() {
   const { data: accounts = [] } = useQuery({
     queryKey: ['binance-accounts'],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts`, {
+      const res = await fetch(`${API_URL}/api/binance/accounts`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch accounts')
@@ -48,7 +49,7 @@ export default function Bots() {
   // Create bot mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots`, {
+      const res = await fetch(`${API_URL}/api/bots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ export default function Bots() {
   // Delete bot mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots/${id}`, {
+      const res = await fetch(`${API_URL}/api/bots/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -96,7 +97,7 @@ export default function Bots() {
   // Start/Pause bot mutations
   const statusMutation = useMutation({
     mutationFn: async ({ id, action }) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots/${id}/${action}`, {
+      const res = await fetch(`${API_URL}/api/bots/${id}/${action}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       })
