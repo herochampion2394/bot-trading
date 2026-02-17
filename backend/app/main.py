@@ -66,8 +66,7 @@ app = FastAPI(
     description="Automated crypto trading bot with Binance integration",
     version="1.0.0",
     lifespan=lifespan,
-    root_path="",
-    redirect_slashes=False
+    root_path=""
 )
 
 # CORS middleware

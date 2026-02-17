@@ -25,7 +25,7 @@ export default function Bots() {
   const { data: bots = [], isLoading: botsLoading } = useQuery({
     queryKey: ['bots'],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots/`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch bots')
@@ -37,7 +37,7 @@ export default function Bots() {
   const { data: accounts = [] } = useQuery({
     queryKey: ['binance-accounts'],
     queryFn: async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts/`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/binance/accounts`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Failed to fetch accounts')
@@ -48,7 +48,7 @@ export default function Bots() {
   // Create bot mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots/`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/bots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
