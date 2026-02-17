@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from contextlib import asynccontextmanager
@@ -64,7 +65,9 @@ app = FastAPI(
     title="Bot Trading API",
     description="Automated crypto trading bot with Binance integration",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path="",
+    redirect_slashes=False
 )
 
 # CORS middleware
