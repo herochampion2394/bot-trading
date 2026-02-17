@@ -7,6 +7,10 @@ const api = axios.create({
 
 // Add token to requests
 api.interceptors.request.use((config) => {
+  // Add trailing slash to URLs if not present (FastAPI requires it)
+  if (config.url && !config.url.endsWith('/') && !config.url.includes('?')) {
+    config.url = config.url + '/'
+  }
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
