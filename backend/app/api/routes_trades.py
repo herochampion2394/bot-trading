@@ -29,7 +29,7 @@ class TradeResponse(BaseModel):
     class Config:
         from_attributes = True
 
-@router.get("/")
+@router.get("")
 async def list_trades(
     bot_id: Optional[int] = Query(None),
     status: Optional[OrderStatus] = Query(None),
