@@ -41,11 +41,13 @@ class BinanceTrader:
     
     def get_historical_klines(self, symbol: str, interval: str = '1h', limit: int = 100):
         try:
+            logger.info(f"Fetching klines for {symbol} (testnet={self.client.testnet})")
             klines = self.client.get_klines(
                 symbol=symbol,
                 interval=interval,
                 limit=limit
             )
+            logger.info(f"Successfully fetched {len(klines)} klines for {symbol}")
             
             df = pd.DataFrame(klines, columns=[
                 'timestamp', 'open', 'high', 'low', 'close', 'volume',
@@ -59,7 +61,10 @@ class BinanceTrader:
             
             return df
         except BinanceAPIException as e:
-            logger.error(f"Error getting klines: {e}")
+            logger.error(f"Binance API error getting klines for {symbol}: {e.status_code} - {e.message}")
+            return pd.DataFrame()
+        except Exception as e:
+            logger.error(f"Unexpected error getting klines for {symbol}: {e}", exc_info=True)
             return pd.DataFrame()
     
     def get_current_price(self, symbol: str):

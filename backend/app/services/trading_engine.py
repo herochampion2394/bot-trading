@@ -96,24 +96,18 @@ class TradingEngine:
         """
         try:
             # Fetch historical data
-            klines = trader.get_historical_klines(
+            df = trader.get_historical_klines(
                 symbol=bot.symbol,
                 interval='1h',
                 limit=100
             )
             
-            if not klines:
+            if df.empty:
                 logger.warning(f"No klines data for {bot.symbol}")
+                logger.error(f"Bot {bot.id}: No price data available for {bot.symbol}. Check Binance API connection.")
                 return
             
-            df = pd.DataFrame(klines, columns=[
-                'timestamp', 'open', 'high', 'low', 'close', 'volume',
-                'close_time', 'quote_volume', 'trades', 'taker_buy_base',
-                'taker_buy_quote', 'ignore'
-            ])
-            
-            df['close'] = pd.to_numeric(df['close'])
-            df['volume'] = pd.to_numeric(df['volume'])
+            logger.info(f"Bot {bot.id}: Fetched {len(df)} candles for {bot.symbol}. Latest price: {df['close'].iloc[-1]}")
             
             # Get strategy and generate signal
             strategy = self.get_strategy(bot.strategy, bot.config_params or {})
@@ -138,24 +132,30 @@ class TradingEngine:
             logger.info(f"Executing BUY order for bot {bot.id}: {quantity} {bot.symbol} @ {current_price}")
             
             # Place market order
-            order = trader.place_market_order(
+            order_result = trader.place_market_order(
                 symbol=bot.symbol,
                 side='BUY',
                 quantity=quantity
             )
             
-            if order and order.get('status') == 'FILLED':
+            logger.info(f"Bot {bot.id} order result: {order_result}")
+            
+            if order_result and order_result.get('success'):
+                order = order_result.get('order', {})
+                filled_price = order_result.get('price', current_price)
+                filled_qty = order_result.get('quantity', quantity)
+                
                 # Record trade
                 trade = Trade(
                     user_id=bot.user_id,
                     bot_config_id=bot.id,
                     symbol=bot.symbol,
                     side=OrderSide.BUY,
-                    entry_price=float(order.get('fills', [{}])[0].get('price', current_price)),
-                    quantity=quantity,
+                    entry_price=filled_price,
+                    quantity=filled_qty,
                     amount_usdt=bot.trade_amount_usdt,
                     status=OrderStatus.FILLED,
-                    order_id=order.get('orderId'),
+                    order_id=order_result.get('order_id'),
                     entry_time=datetime.utcnow(),
                     strategy_signal=signal_data['reason']
                 )
@@ -165,9 +165,12 @@ class TradingEngine:
                 self.db.commit()
                 
                 logger.info(f"BUY order executed successfully for bot {bot.id}")
+            else:
+                error_msg = order_result.get('error', 'Unknown error') if order_result else 'No response from exchange'
+                logger.error(f"Bot {bot.id}: BUY order FAILED - {error_msg}")
         
         except Exception as e:
-            logger.error(f"Error executing buy order for bot {bot.id}: {e}")
+            logger.error(f"Error executing buy order for bot {bot.id}: {e}", exc_info=True)
     
     async def manage_open_position(self, bot: BotConfig, trader: BinanceTrader, trade: Trade):
         """
