@@ -12,10 +12,12 @@ logger = logging.getLogger(__name__)
 class BinanceTrader:
     def __init__(self, api_key: str, api_secret: str, testnet: bool = False):
         if testnet:
-            self.client = Client(api_key, api_secret, testnet=True)
-            self.client.API_URL = 'https://testnet.binance.vision/api'
+            # Paper trading mode - use real Binance data but don't place orders
+            self.client = Client(api_key, api_secret, testnet=False)  # Use production API for data
+            self.testnet = True  # Flag for paper trading
         else:
             self.client = Client(api_key, api_secret)
+            self.testnet = False
     
     def get_account_balance(self):
         try:
@@ -76,6 +78,38 @@ class BinanceTrader:
             return None
     
     def place_market_order(self, symbol: str, side: str, quantity: float):
+        # Paper trading mode - simulate order without placing real order
+        if self.testnet:
+            try:
+                current_price = self.get_current_price(symbol)
+                if not current_price:
+                    return {'success': False, 'error': 'Could not get current price'}
+                
+                # Simulate successful order
+                import random
+                simulated_order_id = random.randint(100000, 999999)
+                
+                logger.info(f"PAPER TRADE: Simulated {side} {quantity} {symbol} @ {current_price}")
+                
+                return {
+                    'success': True,
+                    'order_id': simulated_order_id,
+                    'price': current_price,
+                    'quantity': quantity,
+                    'order': {
+                        'orderId': simulated_order_id,
+                        'symbol': symbol,
+                        'side': side,
+                        'executedQty': str(quantity),
+                        'status': 'FILLED',
+                        'type': 'MARKET'
+                    }
+                }
+            except Exception as e:
+                logger.error(f"Paper trade simulation error: {e}")
+                return {'success': False, 'error': str(e)}
+        
+        # Real trading mode
         try:
             order = self.client.create_order(
                 symbol=symbol,
