@@ -94,7 +94,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-return {
+    return {
         "status": "healthy",
         "scheduler": scheduler.running,
         "next_run": str(scheduler.get_jobs()[0].next_run_time) if scheduler.get_jobs() else None
