@@ -67,7 +67,7 @@ async def connect_binance_account(
         api_key=account_data.api_key,
         api_secret=account_data.api_secret,
         testnet=account_data.testnet,
-        balance_usdt=balance.get('USDT', 0.0)
+        balance_usdt=balance.get('USDT', {}).get('total', 0.0)
     )
     
     db.add(account)
@@ -190,7 +190,7 @@ async def sync_binance_account(
             testnet=account.testnet
         )
         balance = trader.get_account_balance()
-        account.balance_usdt = balance.get('USDT', 0.0)
+        account.balance_usdt = balance.get('USDT', {}).get('total', 0.0)
         db.commit()
         
         return {"balance_usdt": account.balance_usdt, "full_balance": balance}
