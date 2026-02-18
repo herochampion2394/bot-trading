@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -94,16 +95,16 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {
+return {
         "status": "healthy",
         "scheduler": scheduler.running,
         "next_run": str(scheduler.get_jobs()[0].next_run_time) if scheduler.get_jobs() else None
     }
 
 @app.post("/api/trading/execute-now")
-async def execute_trading_now():
+async def execute_trading_now(current_user: dict = Depends(routes_auth.get_current_user)):
     """
-    Manual trigger for trading execution (for testing).
+    Manual trigger for trading execution (requires authentication).
     """
     db = SessionLocal()
     try:

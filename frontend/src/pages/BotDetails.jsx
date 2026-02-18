@@ -71,6 +71,26 @@ export default function BotDetails() {
     }
   })
 
+  // Execute trading now mutation
+  const executeNow = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_URL}/api/trading/execute-now`, {
+        method: 'POST',
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      if (!res.ok) throw new Error('Failed to execute trading')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bot', botId])
+      queryClient.invalidateQueries(['trades', botId])
+      queryClient.invalidateQueries(['analytics', botId])
+    }
+  })
+
   // Delete bot mutation
   const deleteBot = useMutation({
     mutationFn: async () => {
@@ -139,6 +159,7 @@ export default function BotDetails() {
         {/* Action Buttons */}
         <div className="flex gap-2">
           {bot.status === 'active' ? (
+            <>
             <Button
               variant="outline"
               onClick={() => toggleBot.mutate('pause')}
@@ -147,6 +168,15 @@ export default function BotDetails() {
               <Pause className="w-4 h-4 mr-2" />
               Pause
             </Button>
+            <Button
+              variant="default"
+              onClick={() => executeNow.mutate()}
+              disabled={executeNow.isPending}
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              {executeNow.isPending ? 'Executing...' : 'Test Now'}
+            </Button>
+            </>
           ) : (
             <Button
               variant="default"

@@ -111,6 +111,25 @@ export default function Bots() {
     }
   })
   
+  // Execute trading now mutation
+  const executeNow = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_URL}/api/trading/execute-now`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to execute trading')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['bots'])
+      alert('Trading execution completed! Check bot details for trades.')
+    },
+    onError: (error) => {
+      alert(`Error: ${error.message}`)
+    }
+  })
+
   const handleOpenModal = (bot = null) => {
     if (bot) {
       setEditingBot(bot)
@@ -188,9 +207,18 @@ export default function Bots() {
           <h1 className="text-3xl font-bold">Trading Bots</h1>
           <p className="text-muted-foreground mt-1">Manage your automated trading strategies</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="px-4 py-2">
-          + Create Bot
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => executeNow.mutate()}
+            disabled={executeNow.isPending || bots.filter(b => b.status === 'active').length === 0}
+          >
+            {executeNow.isPending ? 'Executing...' : 'Test All Bots Now'}
+          </Button>
+          <Button onClick={() => handleOpenModal()} className="px-4 py-2">
+            + Create Bot
+          </Button>
+        </div>
       </div>
       
       {botsLoading && (
