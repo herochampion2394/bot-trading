@@ -65,26 +65,45 @@ class MeanReversionStrategy:
         price_deviation_pct = latest['price_to_ma_pct']
         volume_ratio = latest['volume_ratio']
         
-        # BUY Signal (Mean Reversion)
-        if (
-            price_deviation_pct < -self.price_deviation and
-            rsi < self.rsi_oversold and
-            volume_ratio > self.volume_multiplier and
-            current_price < ma_20
-        ):
-            return {
-                'signal': 'BUY',
-                'reason': f'Mean reversion buy: Price {price_deviation_pct:.2f}% below MA, RSI {rsi:.1f}',
-                'entry_price': current_price,
-                'stop_loss': current_price * 0.97,
-                'take_profit': current_price * 1.05,
-                'indicators': {
-                    'rsi': rsi,
-                    'ma_20': ma_20,
-                    'price_deviation_pct': price_deviation_pct,
-                    'volume_ratio': volume_ratio
-                }
+        # TESTING MODE: Always generate BUY signal for first few tests
+        logger.info(f"Strategy check: price={current_price:.2f}, RSI={rsi:.1f}, deviation={price_deviation_pct:.2f}%, volume_ratio={volume_ratio:.2f}")
+        logger.info(f"BUY conditions: deviation < -{self.price_deviation} ({price_deviation_pct:.2f} < -{self.price_deviation}), RSI < {self.rsi_oversold} ({rsi:.1f} < {self.rsi_oversold}), volume > {self.volume_multiplier} ({volume_ratio:.2f} > {self.volume_multiplier})")
+        
+        # Force BUY signal for testing (remove this after testing)
+        return {
+            'signal': 'BUY',
+            'reason': f'FORCED TEST BUY - Price {current_price:.2f}, RSI {rsi:.1f}',
+            'entry_price': current_price,
+            'stop_loss': current_price * 0.97,
+            'take_profit': current_price * 1.05,
+            'indicators': {
+                'rsi': rsi,
+                'ma_20': ma_20,
+                'price_deviation_pct': price_deviation_pct,
+                'volume_ratio': volume_ratio
             }
+        }
+        
+        # BUY Signal (Mean Reversion)
+        # if (
+        #     price_deviation_pct < -self.price_deviation and
+        #     rsi < self.rsi_oversold and
+        #     volume_ratio > self.volume_multiplier and
+        #     current_price < ma_20
+        # ):
+        #     return {
+        #         'signal': 'BUY',
+        #         'reason': f'Mean reversion buy: Price {price_deviation_pct:.2f}% below MA, RSI {rsi:.1f}',
+        #         'entry_price': current_price,
+        #         'stop_loss': current_price * 0.97,
+        #         'take_profit': current_price * 1.05,
+        #         'indicators': {
+        #             'rsi': rsi,
+        #             'ma_20': ma_20,
+        #             'price_deviation_pct': price_deviation_pct,
+        #             'volume_ratio': volume_ratio
+        #         }
+        #     }
         
         # SELL Signal (Overbought)
         if (
