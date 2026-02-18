@@ -1,12 +1,14 @@
+import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '../components/ui/Button'
-import { Bot, Play, Pause, Trash2, TrendingUp, TrendingDown } from 'lucide-react'
+import { Bot, Play, Pause, Trash2, TrendingUp, TrendingDown, Eye } from 'lucide-react'
 import { API_URL } from '../config'
 
 export default function Bots() {
   const [showModal, setShowModal] = useState(false)
+  const navigate = useNavigate()
   const [editingBot, setEditingBot] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -254,7 +256,13 @@ export default function Bots() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border">
+              <div className="grid grid-cols-4 gap-2 pt-2 border-t border-border">
+                <button
+                  onClick={() => navigate(`/bots/${bot.id}`)}
+                  className="flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded transition-colors bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20"
+                >
+                  <Eye className="h-3 w-3" /> Details
+                </button>
                 <button
                   onClick={() => handleToggleStatus(bot)}
                   disabled={statusMutation.isPending || bot.status === 'error'}
