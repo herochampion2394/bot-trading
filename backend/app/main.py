@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from app.database import engine, Base, SessionLocal
-    from app.api import routes_auth, routes_binance, routes_bots, routes_trades
+    from app.api import routes_auth, routes_binance, routes_bots, routes_trades, routes_debug
     from app.services.trading_engine import TradingEngine
     logger.info("All imports successful")
 except Exception as e:
@@ -83,6 +83,7 @@ app.include_router(routes_auth.router)
 app.include_router(routes_binance.router)
 app.include_router(routes_bots.router)
 app.include_router(routes_trades.router)
+app.include_router(routes_debug.router)
 
 @app.get("/")
 async def root():
@@ -112,6 +113,7 @@ async def execute_trading_now(current_user: dict = Depends(routes_auth.get_curre
         return {"message": "Trading execution completed"}
     except Exception as e:
         logger.error(f"Error in manual trading execution: {e}")
+        logger.error(traceback.format_exc())
         return {"error": str(e)}
     finally:
         db.close()
