@@ -44,6 +44,12 @@ class BinanceTrader:
     def get_historical_klines(self, symbol: str, interval: str = '1h', limit: int = 100):
         try:
             logger.info(f"Fetching klines for {symbol} (testnet={self.client.testnet})")
+            
+            # Paper trading with mock data if API is geo-blocked
+            if self.testnet:
+                logger.info(f"Using mock data for paper trading")
+                return self._generate_mock_klines(symbol, limit)
+            
             klines = self.client.get_klines(
                 symbol=symbol,
                 interval=interval,
@@ -69,8 +75,58 @@ class BinanceTrader:
             logger.error(f"Unexpected error getting klines for {symbol}: {e}", exc_info=True)
             return pd.DataFrame()
     
+    def _generate_mock_klines(self, symbol: str, limit: int = 100):
+        """Generate realistic mock kline data for paper trading."""
+        import random
+        from datetime import datetime, timedelta
+        
+        # Base price for different symbols
+        base_prices = {
+            'BTCUSDT': 95000,
+            'ETHUSDT': 3500,
+            'BNBUSDT': 600
+        }
+        
+        base_price = base_prices.get(symbol, 100)
+        
+        klines = []
+        current_time = datetime.utcnow() - timedelta(hours=limit)
+        current_price = base_price
+        
+        for i in range(limit):
+            # Simulate price movement (-1% to +1%)
+            price_change = random.uniform(-0.01, 0.01)
+            current_price = current_price * (1 + price_change)
+            
+            # Create OHLCV data
+            open_price = current_price * (1 + random.uniform(-0.002, 0.002))
+            high_price = max(open_price, current_price) * (1 + random.uniform(0, 0.005))
+            low_price = min(open_price, current_price) * (1 - random.uniform(0, 0.005))
+            close_price = current_price
+            volume = random.uniform(100, 1000)
+            
+            klines.append({
+                'timestamp': current_time,
+                'open': open_price,
+                'high': high_price,
+                'low': low_price,
+                'close': close_price,
+                'volume': volume
+            })
+            
+            current_time += timedelta(hours=1)
+        
+        df = pd.DataFrame(klines)
+        logger.info(f"Generated {len(df)} mock candles. Latest price: {df['close'].iloc[-1]:.2f}")
+        return df
+    
     def get_current_price(self, symbol: str):
         try:
+            if self.testnet:
+                # Use mock data
+                df = self._generate_mock_klines(symbol, 1)
+                return float(df['close'].iloc[-1]) if not df.empty else None
+            
             ticker = self.client.get_symbol_ticker(symbol=symbol)
             return float(ticker['price'])
         except BinanceAPIException as e:
