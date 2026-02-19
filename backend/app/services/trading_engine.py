@@ -145,6 +145,16 @@ class TradingEngine:
                 filled_price = order_result.get('price', current_price)
                 filled_qty = order_result.get('quantity', quantity)
                 
+                # Update paper trading balance in database
+                binance_account = self.db.query(BinanceAccount).filter(
+                    BinanceAccount.id == bot.binance_account_id
+                ).first()
+                
+                if binance_account and binance_account.testnet:
+                    # Deduct trade amount from paper balance
+                    binance_account.balance_usdt = (binance_account.balance_usdt or 10000.0) - bot.trade_amount_usdt
+                    logger.info(f"Updated paper balance: ${binance_account.balance_usdt:.2f}")
+                
                 # Record trade
                 trade = Trade(
                     user_id=bot.user_id,
@@ -218,6 +228,17 @@ class TradingEngine:
                 # Calculate P&L
                 profit_loss_usdt = (exit_price - trade.entry_price) * trade.quantity
                 profit_loss_percent = ((exit_price - trade.entry_price) / trade.entry_price) * 100
+                
+                # Update paper trading balance in database
+                binance_account = self.db.query(BinanceAccount).filter(
+                    BinanceAccount.id == bot.binance_account_id
+                ).first()
+                
+                if binance_account and binance_account.testnet:
+                    # Add back the trade amount + profit/loss to paper balance
+                    exit_value = exit_price * trade.quantity
+                    binance_account.balance_usdt = (binance_account.balance_usdt or 0.0) + exit_value
+                    logger.info(f"Updated paper balance after SELL: ${binance_account.balance_usdt:.2f}")
                 
                 # Update trade
                 trade.exit_price = exit_price

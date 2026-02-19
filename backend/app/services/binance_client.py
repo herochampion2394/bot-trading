@@ -15,11 +15,24 @@ class BinanceTrader:
             # Paper trading mode - use real Binance data but don't place orders
             self.client = Client(api_key, api_secret, testnet=False)  # Use production API for data
             self.testnet = True  # Flag for paper trading
+            self.paper_balance = 10000.0  # Starting paper trading balance in USDT
         else:
             self.client = Client(api_key, api_secret)
             self.testnet = False
+            self.paper_balance = None
     
     def get_account_balance(self):
+        # Paper trading mode - return simulated balance
+        if self.testnet:
+            return {
+                'USDT': {
+                    'free': self.paper_balance,
+                    'locked': 0.0,
+                    'total': self.paper_balance
+                }
+            }
+        
+        # Real trading mode
         try:
             account = self.client.get_account()
             balances = {}
@@ -140,6 +153,17 @@ class BinanceTrader:
                 current_price = self.get_current_price(symbol)
                 if not current_price:
                     return {'success': False, 'error': 'Could not get current price'}
+                
+                # Update paper balance
+                order_value = current_price * quantity
+                if side == 'BUY':
+                    if self.paper_balance < order_value:
+                        return {'success': False, 'error': f'Insufficient balance: {self.paper_balance:.2f} < {order_value:.2f}'}
+                    self.paper_balance -= order_value
+                    logger.info(f"PAPER TRADE: Bought {quantity} {symbol} @ {current_price}. Balance: ${self.paper_balance:.2f}")
+                elif side == 'SELL':
+                    self.paper_balance += order_value
+                    logger.info(f"PAPER TRADE: Sold {quantity} {symbol} @ {current_price}. Balance: ${self.paper_balance:.2f}")
                 
                 # Simulate successful order
                 import random
