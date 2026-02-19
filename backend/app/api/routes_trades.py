@@ -6,10 +6,20 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 from app.database import get_db
-from app.models.models import User, Trade, BotConfig, OrderStatus
+from app.models.models import User, Trade, BotConfig, OrderStatus, BinanceAccount, OrderSide
 from app.services.auth import get_current_user
+from app.services.binance_client import BinanceTrader
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/trades", tags=["Trades"])
+
+class ManualTradeRequest(BaseModel):
+    binance_account_id: int
+    symbol: str
+    side: str
+    amount_usdt: float
 
 class TradeResponse(BaseModel):
     id: int
@@ -151,3 +161,88 @@ async def get_trade(
         raise HTTPException(status_code=404, detail="Trade not found")
     
     return trade
+
+@router.post("/manual")
+async def create_manual_trade(
+    trade_request: ManualTradeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Execute a manual trade.
+    """
+    try:
+        account = db.query(BinanceAccount).filter(
+            BinanceAccount.id == trade_request.binance_account_id,
+            BinanceAccount.user_id == current_user.id
+        ).first()
+        
+        if not account:
+            raise HTTPException(status_code=404, detail="Binance account not found")
+        if not account.is_active:
+            raise HTTPException(status_code=400, detail="Account not active")
+        
+        trader = BinanceTrader(
+            api_key=account.api_key,
+            api_secret=account.api_secret,
+            testnet=account.testnet
+        )
+        
+        current_price = trader.get_current_price(trade_request.symbol)
+        if not current_price:
+            raise HTTPException(status_code=400, detail=f"Could not get price for {trade_request.symbol}")
+        
+        quantity = trade_request.amount_usdt / current_price
+        
+        logger.info(f"Manual {trade_request.side}: {quantity} {trade_request.symbol} @ {current_price}")
+        
+        order_result = trader.place_market_order(
+            symbol=trade_request.symbol,
+            side=trade_request.side,
+            quantity=quantity
+        )
+        
+        if not order_result or not order_result.get('success'):
+            error_msg = order_result.get('error', 'Unknown error') if order_result else 'No response'
+            raise HTTPException(status_code=400, detail=f"Order failed: {error_msg}")
+        
+        if account.testnet:
+            if trade_request.side == 'BUY':
+                account.balance_usdt = (account.balance_usdt or 10000.0) - trade_request.amount_usdt
+            elif trade_request.side == 'SELL':
+                account.balance_usdt = (account.balance_usdt or 0.0) + (current_price * quantity)
+        
+        trade = Trade(
+            user_id=current_user.id,
+            bot_config_id=None,
+            symbol=trade_request.symbol,
+            side=OrderSide.BUY if trade_request.side == 'BUY' else OrderSide.SELL,
+            entry_price=order_result.get('price', current_price),
+            quantity=order_result.get('quantity', quantity),
+            amount_usdt=trade_request.amount_usdt,
+            status=OrderStatus.FILLED,
+            order_id=order_result.get('order_id'),
+            entry_time=datetime.utcnow(),
+            strategy_signal='Manual trade'
+        )
+        
+        db.add(trade)
+        db.commit()
+        db.refresh(trade)
+        
+        return {
+            "success": True,
+            "trade_id": trade.id,
+            "symbol": trade.symbol,
+            "side": trade_request.side,
+            "price": order_result.get('price', current_price),
+            "quantity": order_result.get('quantity', quantity),
+            "amount_usdt": trade_request.amount_usdt,
+            "balance_usdt": account.balance_usdt
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Manual trade error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed: {str(e)}")

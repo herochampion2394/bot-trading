@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, Menu, X, LayoutDashboard, Bot, Wallet, History } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Bot, Wallet, History, Coins } from 'lucide-react';
 import { Button } from './ui/Button';
 import { useState } from 'react';
 
@@ -17,6 +17,7 @@ export function AppLayout() {
     { title: 'Dashboard', url: '/', icon: LayoutDashboard },
     { title: 'Bots', url: '/bots', icon: Bot },
     { title: 'Accounts', url: '/accounts', icon: Wallet },
+    { title: 'Manual Trade', url: '/manual-trade', icon: Coins },
     { title: 'Trade History', url: '/trades', icon: History },
   ];
 

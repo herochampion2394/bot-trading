@@ -9,6 +9,7 @@ import Bots from './pages/Bots'
 import BotDetails from './pages/BotDetails'
 import Trades from './pages/Trades'
 import Accounts from './pages/Accounts'
+import ManualTrade from './pages/ManualTrade'
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/bots" element={<Bots />} />
           <Route path="/bots/:botId" element={<BotDetails />} />
           <Route path="/accounts" element={<Accounts />} />
+          <Route path="/manual-trade" element={<ManualTrade />} />
           <Route path="/trades" element={<Trades />} />
         </Route>
       </Routes>
