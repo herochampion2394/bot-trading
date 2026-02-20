@@ -6,6 +6,7 @@ from ta.momentum import RSIIndicator
 from ta.trend import SMAIndicator
 from datetime import datetime
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +14,10 @@ class BinanceTrader:
     def __init__(self, api_key: str, api_secret: str, testnet: bool = False):
         if testnet:
             # Paper trading mode - use real Binance data but don't place orders
-            self.client = Client(api_key, api_secret, testnet=False)  # Use production API for data
             self.testnet = True  # Flag for paper trading
             self.paper_balance = 10000.0  # Starting paper trading balance in USDT
+            # Don't initialize client for paper trading - use public APIs instead
+            self.client = None
         else:
             self.client = Client(api_key, api_secret)
             self.testnet = False
@@ -56,12 +58,12 @@ class BinanceTrader:
     
     def get_historical_klines(self, symbol: str, interval: str = '1h', limit: int = 100):
         try:
-            logger.info(f"Fetching klines for {symbol} (testnet={self.client.testnet})")
+            logger.info(f"Fetching klines for {symbol} (testnet={self.testnet})")
             
             # Paper trading with mock data if API is geo-blocked
             if self.testnet:
-                logger.info(f"Using mock data for paper trading")
-                return self._generate_mock_klines(symbol, limit)
+                logger.info(f"Fetching real-time data from Binance US for paper trading")
+                return self._fetch_public_klines(symbol, interval, limit)
             
             klines = self.client.get_klines(
                 symbol=symbol,
@@ -87,6 +89,48 @@ class BinanceTrader:
         except Exception as e:
             logger.error(f"Unexpected error getting klines for {symbol}: {e}", exc_info=True)
             return pd.DataFrame()
+    
+    def _fetch_public_klines(self, symbol: str, interval: str = '1h', limit: int = 100):
+        """Fetch real-time kline data from Binance US public API."""
+        try:
+            # Binance US public API (no authentication needed)
+            url = f"https://api.binance.us/api/v3/klines"
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'limit': limit
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            klines = response.json()
+            
+            if not klines:
+                logger.warning(f"No klines data returned for {symbol}")
+                return pd.DataFrame()
+            
+            # Convert to DataFrame
+            df = pd.DataFrame(klines, columns=[
+                'timestamp', 'open', 'high', 'low', 'close', 'volume',
+                'close_time', 'quote_volume', 'trades', 'taker_buy_base',
+                'taker_buy_quote', 'ignore'
+            ])
+            
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                df[col] = df[col].astype(float)
+            
+            logger.info(f"Fetched {len(df)} real-time candles. Latest price: ${df['close'].iloc[-1]:,.2f}")
+            return df
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching public klines: {e}")
+            # Fallback to mock data if API fails
+            logger.warning(f"Falling back to mock data")
+            return self._generate_mock_klines(symbol, limit)
+        except Exception as e:
+            logger.error(f"Unexpected error in _fetch_public_klines: {e}", exc_info=True)
+            return self._generate_mock_klines(symbol, limit)
     
     def _generate_mock_klines(self, symbol: str, limit: int = 100):
         """Generate realistic mock kline data for paper trading."""
@@ -136,9 +180,15 @@ class BinanceTrader:
     def get_current_price(self, symbol: str):
         try:
             if self.testnet:
-                # Use mock data
-                df = self._generate_mock_klines(symbol, 1)
-                return float(df['close'].iloc[-1]) if not df.empty else None
+                # Use Binance US public API for real-time price
+                url = f"https://api.binance.us/api/v3/ticker/price"
+                params = {'symbol': symbol}
+                response = requests.get(url, params=params, timeout=5)
+                response.raise_for_status()
+                data = response.json()
+                price = float(data['price'])
+                logger.info(f"Current {symbol} price: ${price:,.2f} (real-time from Binance US)")
+                return price
             
             ticker = self.client.get_symbol_ticker(symbol=symbol)
             return float(ticker['price'])
