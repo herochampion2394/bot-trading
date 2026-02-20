@@ -183,28 +183,32 @@ async def create_manual_trade(
             raise HTTPException(status_code=400, detail="Account not active")
         
         trader = BinanceTrader(
-            api_key=account.api_key,
-            api_secret=account.api_secret,
-            testnet=account.testnet
-        )
-        
-        current_price = trader.get_current_price(trade_request.symbol)
-        if not current_price:
-            raise HTTPException(status_code=400, detail=f"Could not get price for {trade_request.symbol}")
-        
-        quantity = trade_request.amount_usdt / current_price
-        
-        logger.info(f"Manual {trade_request.side}: {quantity} {trade_request.symbol} @ {current_price}")
-        
-        order_result = trader.place_market_order(
-            symbol=trade_request.symbol,
-            side=trade_request.side,
-            quantity=quantity
-        )
-        
-        if not order_result or not order_result.get('success'):
-            error_msg = order_result.get('error', 'Unknown error') if order_result else 'No response'
-            raise HTTPException(status_code=400, detail=f"Order failed: {error_msg}")
+           api_key=account.api_key,
+           api_secret=account.api_secret,
+           testnet=account.testnet
+       )
+       
+       logger.info(f"Manual trade - Account ID: {account.id}, Testnet: {account.testnet}, Side: {trade_request.side}")
+       
+       current_price = trader.get_current_price(trade_request.symbol)
+       if not current_price:
+           raise HTTPException(status_code=400, detail=f"Could not get price for {trade_request.symbol}")
+       
+       quantity = trade_request.amount_usdt / current_price
+       
+       logger.info(f"Manual {trade_request.side}: {quantity} {trade_request.symbol} @ {current_price}")
+       
+       order_result = trader.place_market_order(
+           symbol=trade_request.symbol,
+           side=trade_request.side,
+           quantity=quantity
+       )
+       
+       logger.info(f"Order result: {order_result}")
+       
+       if not order_result or not order_result.get('success'):
+           error_msg = order_result.get('error', 'Unknown error') if order_result else 'No response'
+           raise HTTPException(status_code=400, detail=f"Order failed: {error_msg}")
         
         if account.testnet:
             if trade_request.side == 'BUY':

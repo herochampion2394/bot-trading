@@ -11,17 +11,17 @@ import requests
 logger = logging.getLogger(__name__)
 
 class BinanceTrader:
-    def __init__(self, api_key: str, api_secret: str, testnet: bool = False):
-        if testnet:
-            # Paper trading mode - use real Binance data but don't place orders
-            self.testnet = True  # Flag for paper trading
-            self.paper_balance = 10000.0  # Starting paper trading balance in USDT
-            # Don't initialize client for paper trading - use public APIs instead
-            self.client = None
-        else:
-            self.client = Client(api_key, api_secret)
-            self.testnet = False
-            self.paper_balance = None
+   def __init__(self, api_key: str, api_secret: str, testnet: bool = False):
+       if testnet:
+           # Paper trading mode - use real Binance data but don't place orders
+           self.testnet = True  # Flag for paper trading
+           self.paper_balance = None  # Will be set from database
+           # Don't initialize client for paper trading - use public APIs instead
+           self.client = None
+       else:
+           self.client = Client(api_key, api_secret)
+           self.testnet = False
+           self.paper_balance = None
     
     def get_account_balance(self):
         # Paper trading mode - return simulated balance
