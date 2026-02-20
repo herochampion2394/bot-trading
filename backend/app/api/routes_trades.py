@@ -183,76 +183,76 @@ async def create_manual_trade(
             raise HTTPException(status_code=400, detail="Account not active")
         
         trader = BinanceTrader(
-           api_key=account.api_key,
-           api_secret=account.api_secret,
-           testnet=account.testnet
-       )
-       
-       logger.info(f"Manual trade - Account ID: {account.id}, Testnet: {account.testnet}, Side: {trade_request.side}")
-       
-       current_price = trader.get_current_price(trade_request.symbol)
-       if not current_price:
-           raise HTTPException(status_code=400, detail=f"Could not get price for {trade_request.symbol}")
-       
-       # For BUY: amount_usdt is how much USDT to spend -> calculate BTC quantity
-       # For SELL: need to find how much BTC to sell to get amount_usdt worth
-       if trade_request.side == 'BUY':
-           quantity = trade_request.amount_usdt / current_price
-       else:  # SELL
-           # Find user's BTC holdings from trades
-           buy_trades = db.query(Trade).filter(
-               Trade.user_id == current_user.id,
-               Trade.symbol == trade_request.symbol,
-               Trade.side == OrderSide.BUY,
-               Trade.status == OrderStatus.FILLED
-           ).all()
-           
-           sell_trades = db.query(Trade).filter(
-               Trade.user_id == current_user.id,
-               Trade.symbol == trade_request.symbol,
-               Trade.side == OrderSide.SELL,
-               Trade.status == OrderStatus.FILLED
-           ).all()
-           
-           total_bought = sum(t.quantity for t in buy_trades)
-           total_sold = sum(t.quantity for t in sell_trades)
-           available_quantity = total_bought - total_sold
-           
-           # Calculate how much BTC to sell
-           quantity_to_sell = trade_request.amount_usdt / current_price
-           
-           if quantity_to_sell > available_quantity:
-               raise HTTPException(
+            api_key=account.api_key,
+            api_secret=account.api_secret,
+            testnet=account.testnet
+        )
+        
+        logger.info(f"Manual trade - Account ID: {account.id}, Testnet: {account.testnet}, Side: {trade_request.side}")
+        
+        current_price = trader.get_current_price(trade_request.symbol)
+        if not current_price:
+            raise HTTPException(status_code=400, detail=f"Could not get price for {trade_request.symbol}")
+        
+        # For BUY: amount_usdt is how much USDT to spend -> calculate BTC quantity
+        # For SELL: need to find how much BTC to sell to get amount_usdt worth
+        if trade_request.side == 'BUY':
+            quantity = trade_request.amount_usdt / current_price
+        else:  # SELL
+            # Find user's BTC holdings from trades
+            buy_trades = db.query(Trade).filter(
+                Trade.user_id == current_user.id,
+                Trade.symbol == trade_request.symbol,
+                Trade.side == OrderSide.BUY,
+                Trade.status == OrderStatus.FILLED
+            ).all()
+            
+            sell_trades = db.query(Trade).filter(
+                Trade.user_id == current_user.id,
+                Trade.symbol == trade_request.symbol,
+                Trade.side == OrderSide.SELL,
+                Trade.status == OrderStatus.FILLED
+            ).all()
+            
+            total_bought = sum(t.quantity for t in buy_trades)
+            total_sold = sum(t.quantity for t in sell_trades)
+            available_quantity = total_bought - total_sold
+            
+            # Calculate how much BTC to sell
+            quantity_to_sell = trade_request.amount_usdt / current_price
+            
+            if quantity_to_sell > available_quantity:
+                raise HTTPException(
                    status_code=400,
                    detail=f"Insufficient {trade_request.symbol.replace('USDT', '')} balance. Available: {available_quantity:.8f}, Requested: {quantity_to_sell:.8f}"
-               )
-           
-           quantity = quantity_to_sell
-       
-       logger.info(f"Manual {trade_request.side}: {quantity} {trade_request.symbol} @ {current_price}")
-       
-       order_result = trader.place_market_order(
-           symbol=trade_request.symbol,
-           side=trade_request.side,
-           quantity=quantity
-       )
-       
-       logger.info(f"Order result: {order_result}")
-       
-       if not order_result or not order_result.get('success'):
-           error_msg = order_result.get('error', 'Unknown error') if order_result else 'No response'
-           raise HTTPException(status_code=400, detail=f"Order failed: {error_msg}")
+                )
+            
+            quantity = quantity_to_sell
+        
+        logger.info(f"Manual {trade_request.side}: {quantity} {trade_request.symbol} @ {current_price}")
+        
+        order_result = trader.place_market_order(
+            symbol=trade_request.symbol,
+            side=trade_request.side,
+            quantity=quantity
+        )
+        
+        logger.info(f"Order result: {order_result}")
+        
+        if not order_result or not order_result.get('success'):
+            error_msg = order_result.get('error', 'Unknown error') if order_result else 'No response'
+            raise HTTPException(status_code=400, detail=f"Order failed: {error_msg}")
         
         if account.testnet:
-           if trade_request.side == 'BUY':
-               account.balance_usdt = (account.balance_usdt or 10000.0) - trade_request.amount_usdt
-           elif trade_request.side == 'SELL':
-               # When selling, add the USDT value received back to balance
-               usdt_received = current_price * quantity
-               account.balance_usdt = (account.balance_usdt or 0.0) + usdt_received
-               logger.info(f"SELL: Received ${usdt_received:.2f} USDT, new balance: ${account.balance_usdt:.2f}")
-       
-       trade = Trade(
+            if trade_request.side == 'BUY':
+                account.balance_usdt = (account.balance_usdt or 10000.0) - trade_request.amount_usdt
+            elif trade_request.side == 'SELL':
+                # When selling, add the USDT value received back to balance
+                usdt_received = current_price * quantity
+                account.balance_usdt = (account.balance_usdt or 0.0) + usdt_received
+                logger.info(f"SELL: Received ${usdt_received:.2f} USDT, new balance: ${account.balance_usdt:.2f}")
+        
+        trade = Trade(
             user_id=current_user.id,
             bot_config_id=None,
             symbol=trade_request.symbol,
