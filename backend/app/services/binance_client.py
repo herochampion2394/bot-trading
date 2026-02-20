@@ -22,8 +22,8 @@ class BinanceTrader:
             self.client = Client(api_key, api_secret)
             self.testnet = False
             self.paper_balance = None
-   
-   def get_account_balance(self):
+    
+    def get_account_balance(self):
         # Paper trading mode - return simulated balance
         if self.testnet:
             return {
