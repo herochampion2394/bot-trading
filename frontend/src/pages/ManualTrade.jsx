@@ -14,26 +14,26 @@ const ManualTrade = () => {
   });
 
   // Fetch accounts
-  const { data: accountsData } = useQuery({
-    queryKey: ['binance-accounts'],
-    queryFn: async () => {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/binance/accounts`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch accounts');
-      return response.json();
-    }
-  });
+ const { data: accountsData } = useQuery({
+   queryKey: ['binance-accounts'],
+   queryFn: async () => {
+     const token = localStorage.getItem('token');
+     const response = await fetch(`${API_URL}/api/binance/accounts`, {
+       headers: { 'Authorization': `Bearer ${token}` }
+     });
+     if (!response.ok) throw new Error('Failed to fetch accounts');
+     return response.json();
+   }
+ });
 
-  // Auto-select first account
-  useEffect(() => {
-    if (accountsData?.accounts?.length > 0 && !formData.binance_account_id) {
-      setFormData(prev => ({ ...prev, binance_account_id: accountsData.accounts[0].id }));
-    }
-  }, [accountsData]);
+ // Auto-select first account
+ useEffect(() => {
+   if (accountsData && accountsData.length > 0 && !formData.binance_account_id) {
+     setFormData(prev => ({ ...prev, binance_account_id: accountsData[0].id }));
+   }
+ }, [accountsData]);
 
-  // Execute manual trade
+ // Execute manual trade
   const executeTrade = useMutation({
     mutationFn: async (tradeData) => {
       const token = localStorage.getItem('token');
@@ -68,13 +68,13 @@ const ManualTrade = () => {
       alert('Please select a Binance account');
       return;
     }
-    executeTrade.mutate(formData);
-  };
+   executeTrade.mutate(formData);
+ };
 
-  const selectedAccount = accountsData?.accounts?.find(a => a.id === parseInt(formData.binance_account_id));
+ const selectedAccount = accountsData?.find(a => a.id === parseInt(formData.binance_account_id));
 
-  return (
-    <div className="manual-trade-container">
+ return (
+   <div className="manual-trade-container">
       <div className="page-header">
         <div className="page-title">
           <Coins size={32} />
@@ -91,13 +91,13 @@ const ManualTrade = () => {
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Binance Account</label>
-              <select
-                value={formData.binance_account_id}
-                onChange={(e) => setFormData({ ...formData, binance_account_id: e.target.value })}
-                required
-              >
-                <option value="">Select account...</option>
-                {accountsData?.accounts?.map(account => (
+             <select
+               value={formData.binance_account_id}
+               onChange={(e) => setFormData({ ...formData, binance_account_id: e.target.value })}
+               required
+             >
+               <option value="">Select account...</option>
+               {accountsData?.map(account => (
                   <option key={account.id} value={account.id}>
                     {account.name} {account.testnet && '(Paper Trading)'}
                   </option>
