@@ -2,11 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+import requests
+import logging
 
 from app.database import get_db
 from app.models.models import User, BinanceAccount
 from app.services.auth import get_current_user
 from app.services.binance_client import BinanceTrader
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/binance", tags=["Binance"])
 
@@ -88,10 +92,91 @@ async def list_binance_accounts(
         BinanceAccount.user_id == current_user.id
     ).all()
     
-    return [{"id": acc.id, "name": acc.name, "testnet": acc.testnet, 
-             "is_active": acc.is_active, "balance_usdt": acc.balance_usdt,
-             "api_key": acc.api_key, "balance": str(acc.balance_usdt)} 
-            for acc in accounts]
+    # Add holdings information
+    result = []
+    for acc in accounts:
+        holdings = await get_account_holdings(acc.id, db)
+        total_holdings_value = sum(h['current_value'] for h in holdings)
+        
+        result.append({
+            "id": acc.id,
+            "name": acc.name,
+            "testnet": acc.testnet,
+            "is_active": acc.is_active,
+            "balance_usdt": acc.balance_usdt,
+            "api_key": acc.api_key,
+            "balance": str(acc.balance_usdt),
+            "holdings": holdings,
+            "total_holdings_value": total_holdings_value,
+            "total_portfolio_value": (acc.balance_usdt or 0) + total_holdings_value
+        })
+    
+    return result
+
+
+async def get_account_holdings(account_id: int, db):
+    """Calculate coin holdings from open trades."""
+    try:
+        from sqlalchemy import func
+        from app.models.models import BotConfig, Trade, OrderStatus
+        
+        # Find all bots using this account
+        bot_ids = db.query(BotConfig.id).filter(
+            BotConfig.binance_account_id == account_id
+        ).all()
+        bot_ids = [b[0] for b in bot_ids]
+        
+        if not bot_ids:
+            return []
+        
+        # Get BUY trades without corresponding exit
+        buy_trades = db.query(
+            Trade.symbol,
+            func.sum(Trade.quantity).label('total_quantity'),
+            func.avg(Trade.entry_price).label('avg_entry_price')
+        ).filter(
+            Trade.bot_config_id.in_(bot_ids),
+            Trade.side == 'BUY',
+            Trade.status == OrderStatus.FILLED,
+            Trade.exit_time.is_(None)
+        ).group_by(Trade.symbol).all()
+        
+        holdings = []
+        for symbol, quantity, avg_price in buy_trades:
+            if quantity and quantity > 0:
+                # Get current price from Binance US
+                try:
+                    response = requests.get(
+                        f"https://api.binance.us/api/v3/ticker/price",
+                        params={'symbol': symbol},
+                        timeout=5
+                    )
+                    response.raise_for_status()
+                    current_price = float(response.json()['price'])
+                except Exception as e:
+                    logger.error(f"Error fetching price for {symbol}: {e}")
+                    current_price = avg_price
+                
+                current_value = quantity * current_price
+                cost_basis = quantity * avg_price
+                unrealized_pnl = current_value - cost_basis
+                pnl_percent = (unrealized_pnl / cost_basis * 100) if cost_basis > 0 else 0
+                
+                holdings.append({
+                    'symbol': symbol,
+                    'quantity': float(quantity),
+                    'avg_entry_price': float(avg_price),
+                    'current_price': float(current_price),
+                    'current_value': float(current_value),
+                    'cost_basis': float(cost_basis),
+                    'unrealized_pnl': float(unrealized_pnl),
+                    'pnl_percent': float(pnl_percent)
+                })
+        
+        return holdings
+    except Exception as e:
+        logger.error(f"Error calculating holdings: {e}", exc_info=True)
+        return []
 
 @router.get("/accounts/{account_id}", response_model=BinanceAccountResponse)
 async def get_binance_account(
