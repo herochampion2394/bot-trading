@@ -3,8 +3,11 @@ import { DollarSign, TrendingUp, Activity, BarChart3, ArrowUpRight, ArrowDownRig
 import { StatCard } from '../components/StatCard';
 import { cn } from '../lib/utils';
 import api from '../services/api';
+import { API_URL } from '../config';
 
 export default function Dashboard() {
+  const token = localStorage.getItem('token');
+
   const { data: bots } = useQuery({
     queryKey: ['bots'],
     queryFn: () => api.get('/bots/').then(res => res.data)
@@ -15,12 +18,71 @@ export default function Dashboard() {
     queryFn: () => api.get('/trades/analytics').then(res => res.data)
   });
 
+  const { data: portfolio } = useQuery({
+    queryKey: ['portfolio-summary'],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/binance/portfolio/summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return null;
+      return res.json();
+    }
+  });
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-sm text-muted-foreground">Real-time overview of your trading performance</p>
       </div>
+
+      {/* Portfolio Summary */}
+      {portfolio && (
+        <div className="stat-card p-6 animate-fade-in bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Total Portfolio Value</p>
+              <p className="text-4xl font-bold text-foreground">
+                ${portfolio.total_portfolio_value?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </p>
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <span className="text-muted-foreground">
+                  USDT: <span className="text-foreground font-medium">${portfolio.usdt_balance?.toLocaleString()}</span>
+                </span>
+                <span className="text-muted-foreground">
+                  Holdings: <span className="text-foreground font-medium">${portfolio.holdings_value?.toLocaleString()}</span>
+                </span>
+              </div>
+            </div>
+            <div className="flex gap-6">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Today's P&L</p>
+                <p className={`text-xl font-bold flex items-center justify-center gap-1 ${
+                  portfolio.today_pnl >= 0 ? 'text-profit' : 'text-loss'
+                }`}>
+                  {portfolio.today_pnl >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                  ${Math.abs(portfolio.today_pnl)?.toFixed(2)}
+                </p>
+                <p className={`text-xs ${portfolio.today_pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
+                  {portfolio.today_pnl_percent >= 0 ? '+' : ''}{portfolio.today_pnl_percent?.toFixed(2)}%
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
+                <p className={`text-xl font-bold flex items-center justify-center gap-1 ${
+                  portfolio.total_pnl >= 0 ? 'text-profit' : 'text-loss'
+                }`}>
+                  {portfolio.total_pnl >= 0 ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                  ${Math.abs(portfolio.total_pnl)?.toFixed(2)}
+                </p>
+                <p className={`text-xs ${portfolio.total_pnl >= 0 ? 'text-profit' : 'text-loss'}`}>
+                  {portfolio.total_pnl_percent >= 0 ? '+' : ''}{portfolio.total_pnl_percent?.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

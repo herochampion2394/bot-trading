@@ -6,7 +6,7 @@ import requests
 import logging
 
 from app.database import get_db
-from app.models.models import User, BinanceAccount
+from app.models.models import User, BinanceAccount, Trade
 from app.services.auth import get_current_user
 from app.services.binance_client import BinanceTrader
 
@@ -284,3 +284,71 @@ async def sync_binance_account(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to sync balance: {str(e)}"
         )
+
+
+@router.get("/portfolio/summary")
+async def get_portfolio_summary(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get portfolio summary across all accounts.
+    """
+    from datetime import datetime, timedelta
+    
+    accounts = db.query(BinanceAccount).filter(
+        BinanceAccount.user_id == current_user.id
+    ).all()
+    
+    total_usdt_balance = 0
+    total_holdings_value = 0
+    all_holdings = []
+    
+    for acc in accounts:
+        total_usdt_balance += acc.balance_usdt or 0
+        holdings = await get_account_holdings(acc.id, db)
+        for h in holdings:
+            total_holdings_value += h['current_value']
+            all_holdings.append(h)
+    
+    total_portfolio_value = total_usdt_balance + total_holdings_value
+    
+    # Calculate P&L from trades
+    trades = db.query(Trade).filter(
+        Trade.user_id == current_user.id
+    ).all()
+    
+    total_invested = sum(t.amount_usdt or 0 for t in trades if t.side.value == 'BUY')
+    total_sold = sum(t.amount_usdt or 0 for t in trades if t.side.value == 'SELL')
+    
+    # Unrealized P&L from holdings
+    unrealized_pnl = sum(h.get('unrealized_pnl', 0) for h in all_holdings)
+    
+    # Today's trades
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_trades = [t for t in trades if t.entry_time and t.entry_time >= today_start]
+    today_bought = sum(t.amount_usdt or 0 for t in today_trades if t.side.value == 'BUY')
+    today_sold = sum(t.amount_usdt or 0 for t in today_trades if t.side.value == 'SELL')
+    today_pnl = today_sold - today_bought + unrealized_pnl
+    
+    # Total P&L (realized + unrealized)
+    realized_pnl = total_sold - total_invested
+    total_pnl = realized_pnl + unrealized_pnl
+    
+    # P&L percentages
+    initial_value = total_portfolio_value - total_pnl if total_pnl != 0 else total_portfolio_value
+    total_pnl_percent = (total_pnl / initial_value * 100) if initial_value > 0 else 0
+    today_pnl_percent = (today_pnl / total_portfolio_value * 100) if total_portfolio_value > 0 else 0
+    
+    return {
+        "total_portfolio_value": round(total_portfolio_value, 2),
+        "usdt_balance": round(total_usdt_balance, 2),
+        "holdings_value": round(total_holdings_value, 2),
+        "holdings": all_holdings,
+        "total_pnl": round(total_pnl, 2),
+        "total_pnl_percent": round(total_pnl_percent, 2),
+        "today_pnl": round(today_pnl, 2),
+        "today_pnl_percent": round(today_pnl_percent, 2),
+        "total_trades": len(trades),
+        "accounts_count": len(accounts)
+    }
