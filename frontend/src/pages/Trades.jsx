@@ -1,4 +1,3 @@
-export default function Trades() {
 import { useQuery } from '@tanstack/react-query';
 import { Download, TrendingUp, TrendingDown } from 'lucide-react';
 import { API_URL } from '../config';
