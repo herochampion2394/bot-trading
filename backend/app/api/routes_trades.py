@@ -286,3 +286,64 @@ async def create_manual_trade(
     except Exception as e:
         logger.error(f"Manual trade error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed: {str(e)}")
+
+
+@router.get("/export/csv")
+async def export_trades_csv(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Export all trades as CSV file.
+    """
+    from fastapi.responses import StreamingResponse
+    import io
+    import csv
+    
+    trades = db.query(Trade).filter(
+        Trade.user_id == current_user.id
+    ).order_by(desc(Trade.entry_time)).all()
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Header row
+    writer.writerow([
+        'Trade ID', 'Date', 'Symbol', 'Side', 'Quantity', 
+        'Entry Price', 'Exit Price', 'Amount (USDT)', 
+        'Profit/Loss (USDT)', 'Status', 'Strategy'
+    ])
+    
+    # Data rows
+    for trade in trades:
+        profit = None
+        if trade.exit_price and trade.entry_price:
+            if trade.side == OrderSide.BUY:
+                profit = (trade.exit_price - trade.entry_price) * trade.quantity
+            else:
+                profit = (trade.entry_price - trade.exit_price) * trade.quantity
+        
+        writer.writerow([
+            trade.id,
+            trade.entry_time.strftime('%Y-%m-%d %H:%M:%S') if trade.entry_time else '',
+            trade.symbol,
+            trade.side.value if trade.side else '',
+            f'{trade.quantity:.8f}' if trade.quantity else '',
+            f'{trade.entry_price:.2f}' if trade.entry_price else '',
+            f'{trade.exit_price:.2f}' if trade.exit_price else '',
+            f'{trade.amount_usdt:.2f}' if trade.amount_usdt else '',
+            f'{profit:.2f}' if profit else '',
+            trade.status.value if trade.status else '',
+            trade.strategy_signal or 'Manual'
+        ])
+    
+    output.seek(0)
+    
+    filename = f"trades_{current_user.username}_{datetime.utcnow().strftime('%Y%m%d')}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
