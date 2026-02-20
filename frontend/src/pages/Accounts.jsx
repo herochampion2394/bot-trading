@@ -172,17 +172,70 @@ export default function Accounts() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Balance</div>
-                  <div className="text-xl font-bold font-mono text-profit">
-                    ${parseFloat(account.balance_usdt || account.balance || 0).toFixed(2)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">USDT</div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleSync(account.id)}
+                 <div className="text-sm text-muted-foreground">Balance</div>
+                 <div className="text-xl font-bold font-mono text-profit">
+                   ${parseFloat(account.balance_usdt || account.balance || 0).toFixed(2)}
+                 </div>
+                 <div className="text-xs text-muted-foreground">USDT</div>
+               </div>
+             </div>
+             
+             {/* Holdings Display */}
+             {account.holdings && account.holdings.length > 0 && (
+               <div className="border-t border-slate-700 pt-4 space-y-3">
+                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Holdings</h4>
+                 {account.holdings.map((holding) => (
+                   <div key={holding.symbol} className="bg-slate-900/50 rounded-lg p-3 border border-slate-700">
+                     <div className="flex items-center justify-between">
+                       <div className="flex-1">
+                         <div className="flex items-center gap-2">
+                           <span className="font-bold text-white">{holding.symbol.replace('USDT', '')}</span>
+                           <span className="text-xs text-muted-foreground">{holding.symbol}</span>
+                         </div>
+                         <p className="text-xs text-muted-foreground mt-1">
+                           {holding.quantity.toFixed(8)} × ${holding.current_price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                         </p>
+                       </div>
+                       <div className="text-right">
+                         <p className="font-bold text-white">
+                           ${holding.current_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                         </p>
+                         <p className={`text-xs font-medium mt-0.5 ${
+                           holding.pnl_percent >= 0 ? 'text-profit' : 'text-loss'
+                         }`}>
+                           {holding.pnl_percent >= 0 ? '↗' : '↘'} {holding.pnl_percent.toFixed(2)}%
+                           <span className="text-[10px] ml-1">
+                             (${holding.unrealized_pnl >= 0 ? '+' : ''}{holding.unrealized_pnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                           </span>
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+                 <div className="p-2 bg-cyan-500/10 border border-cyan-500/20 rounded">
+                   <div className="flex justify-between items-center text-xs">
+                     <span className="text-cyan-400">Total Holdings:</span>
+                     <span className="font-bold text-cyan-400">
+                       ${account.total_holdings_value?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}
+                     </span>
+                   </div>
+                 </div>
+                 {account.total_portfolio_value && (
+                   <div className="p-2 bg-primary/10 border border-primary/20 rounded">
+                     <div className="flex justify-between items-center text-xs">
+                       <span className="text-primary">Total Portfolio:</span>
+                       <span className="font-bold text-primary">
+                         ${account.total_portfolio_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                       </span>
+                     </div>
+                   </div>
+                 )}
+               </div>
+             )}
+             
+             <div className="flex gap-2">
+               <button
+                 onClick={() => handleSync(account.id)}
                   disabled={syncMutation.isPending}
                   className="flex-1 px-3 py-1.5 text-sm rounded bg-background hover:bg-accent transition-colors disabled:opacity-50"
                 >
