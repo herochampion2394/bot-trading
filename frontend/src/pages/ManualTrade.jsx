@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Coins, TrendingUp, TrendingDown, DollarSign, AlertCircle } from 'lucide-react';
-import API_URL from '../config';
+import { API_URL } from '../config';
 import '../styles/manual-trade.css';
 
 const ManualTrade = () => {
